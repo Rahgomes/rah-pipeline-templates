@@ -3,6 +3,9 @@ parameters:
     type: string
   - name: imageName
     type: string
+  - name: registryUrl
+    type: string
+    default: "registry.ramongomessilva.com.br"
   - name: envLabel
     type: string
     default: ""
@@ -25,3 +28,4 @@ stages:
           - template: build-docker.yml
             parameters:
               imageName: ${{ parameters.imageName }}
+              registryUrl: ${{ parameters.registryUrl }}

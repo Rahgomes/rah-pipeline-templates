@@ -1,12 +1,28 @@
 parameters:
   - name: imageName
     type: string
+  - name: registryUrl
+    type: string
+    default: "registry.ramongomessilva.com.br"
 
 steps:
   - script: |
       set -euo pipefail
-      echo "Building Docker image: ${{ parameters.imageName }}..."
-      docker build -t ${{ parameters.imageName }}:$(Build.BuildId) -t ${{ parameters.imageName }}:latest .
-      echo "Build completed successfully"
-      docker images ${{ parameters.imageName }} --format "table {{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -5
-    displayName: "Build Docker image"
+      REGISTRY="${{ parameters.registryUrl }}"
+      IMAGE="${{ parameters.imageName }}"
+      TAG="$(Build.BuildId)"
+
+      echo "Building Docker image: $IMAGE..."
+      docker build -t $IMAGE:$TAG -t $IMAGE:latest .
+
+      echo "Tagging for registry: $REGISTRY/$IMAGE..."
+      docker tag $IMAGE:$TAG $REGISTRY/$IMAGE:$TAG
+      docker tag $IMAGE:latest $REGISTRY/$IMAGE:latest
+
+      echo "Pushing to registry..."
+      docker push $REGISTRY/$IMAGE:$TAG
+      docker push $REGISTRY/$IMAGE:latest
+
+      echo "Build and push completed successfully"
+      docker images $IMAGE --format "table {{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -5
+    displayName: "Build and push Docker image"

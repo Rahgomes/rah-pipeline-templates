@@ -5,6 +5,9 @@ parameters:
     type: string
   - name: imageName
     type: string
+  - name: registryUrl
+    type: string
+    default: "registry.ramongomessilva.com.br"
   - name: domain
     type: string
   - name: port
@@ -56,6 +59,7 @@ stages:
             parameters:
               containerName: ${{ parameters.containerName }}
               imageName: ${{ parameters.imageName }}
+              registryUrl: ${{ parameters.registryUrl }}
               domain: ${{ parameters.domain }}
               port: ${{ parameters.port }}
               hostPort: ${{ parameters.hostPort }}
