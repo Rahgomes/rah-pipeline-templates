@@ -39,6 +39,18 @@ steps:
       docker stop ${{ parameters.containerName }} 2>/dev/null || true
       docker rm ${{ parameters.containerName }} 2>/dev/null || true
 
+      # Cleanup old Coolify-managed UUID containers that may hold the port
+      for c in $(docker ps -a --filter "label=coolify.name=${{ parameters.coolifyUuid }}" --format "{{.Names}}" 2>/dev/null); do
+        if [ "$c" != "${{ parameters.containerName }}" ]; then
+          echo "Removing old Coolify container: $c"
+          docker stop "$c" 2>/dev/null || true
+          docker rm "$c" 2>/dev/null || true
+        fi
+      done
+
+      # Brief pause to ensure port is released
+      sleep 2
+
       # Build port mapping flag
       PORT_FLAG=""
       if [ -n "${{ parameters.hostPort }}" ]; then
