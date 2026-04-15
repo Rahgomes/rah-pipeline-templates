@@ -1,0 +1,33 @@
+parameters:
+  - name: appName
+    type: string
+  - name: envLabel
+    type: string
+    default: ""
+
+steps:
+  - script: |
+      set -euo pipefail
+      COMMIT_SHORT=$(git rev-parse --short HEAD)
+      COMMIT_MSG=$(git log -1 --pretty=%s)
+      BRANCH=$(Build.SourceBranchName)
+      echo "##vso[task.setvariable variable=COMMIT_SHORT]$COMMIT_SHORT"
+      echo "##vso[task.setvariable variable=COMMIT_MSG]$COMMIT_MSG"
+
+      ENV_SUFFIX="${{ parameters.envLabel }}"
+      if [ -n "$ENV_SUFFIX" ]; then
+        ENV_SUFFIX=" [$ENV_SUFFIX]"
+      fi
+
+      curl -s -X POST \
+        "https://api.telegram.org/bot$(TELEGRAM_BOT_TOKEN)/sendMessage" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"chat_id\": \"$(TELEGRAM_CHAT_ID)\",
+          \"text\": \"🔄 <b>DEPLOY ${{ parameters.appName }}${ENV_SUFFIX} INICIADO</b>\nBranch: <code>$BRANCH</code>\nCommit: <code>$COMMIT_SHORT</code> — $COMMIT_MSG\",
+          \"parse_mode\": \"HTML\"
+        }" > /dev/null
+    displayName: "Notify deploy started"
+    env:
+      TELEGRAM_BOT_TOKEN: $(TELEGRAM_BOT_TOKEN)
+      TELEGRAM_CHAT_ID: $(TELEGRAM_CHAT_ID)

@@ -1,0 +1,89 @@
+parameters:
+  - name: containerName
+    type: string
+  - name: imageName
+    type: string
+  - name: domain
+    type: string
+  - name: port
+    type: string
+    default: "3000"
+  - name: hostPort
+    type: string
+    default: ""
+  - name: coolifyAppId
+    type: string
+  - name: coolifyUuid
+    type: string
+  - name: coolifyResourceName
+    type: string
+  - name: coolifyProjectName
+    type: string
+  - name: coolifyEnvironment
+    type: string
+    default: "production"
+  - name: envFlags
+    type: string
+    default: ""
+  - name: volumes
+    type: string
+    default: ""
+  - name: healthWait
+    type: number
+    default: 10
+
+steps:
+  - script: |
+      set -euo pipefail
+      echo "Stopping current container..."
+      docker stop ${{ parameters.containerName }} 2>/dev/null || true
+      docker rm ${{ parameters.containerName }} 2>/dev/null || true
+
+      # Build port mapping flag
+      PORT_FLAG=""
+      if [ -n "${{ parameters.hostPort }}" ]; then
+        PORT_FLAG="-p ${{ parameters.hostPort }}:${{ parameters.port }}"
+      fi
+
+      # Build volume flag
+      VOLUME_FLAG=""
+      if [ -n "${{ parameters.volumes }}" ]; then
+        VOLUME_FLAG="-v ${{ parameters.volumes }}"
+      fi
+
+      echo "Starting new container..."
+      docker run -d \
+        --name ${{ parameters.containerName }} \
+        --restart unless-stopped \
+        --network coolify \
+        $PORT_FLAG \
+        $VOLUME_FLAG \
+        ${{ parameters.envFlags }} \
+        -l "traefik.enable=true" \
+        -l "traefik.http.routers.${{ parameters.containerName }}.rule=Host(\`${{ parameters.domain }}\`)" \
+        -l "traefik.http.routers.${{ parameters.containerName }}.entrypoints=https" \
+        -l "traefik.http.routers.${{ parameters.containerName }}.tls=true" \
+        -l "traefik.http.routers.${{ parameters.containerName }}.tls.certresolver=letsencrypt" \
+        -l "traefik.http.services.${{ parameters.containerName }}.loadbalancer.server.port=${{ parameters.port }}" \
+        -l "coolify.managed=true" \
+        -l "coolify.applicationId=${{ parameters.coolifyAppId }}" \
+        -l "coolify.type=application" \
+        -l "coolify.name=${{ parameters.coolifyUuid }}" \
+        -l "coolify.resourceName=${{ parameters.coolifyResourceName }}" \
+        -l "coolify.projectName=${{ parameters.coolifyProjectName }}" \
+        -l "coolify.environmentName=${{ parameters.coolifyEnvironment }}" \
+        -l "coolify.serviceName=${{ parameters.containerName }}" \
+        -l "coolify.pullRequestId=0" \
+        -l "coolify.version=4.0.0-beta.462" \
+        ${{ parameters.imageName }}:$(Build.BuildId)
+
+      echo "Waiting ${{ parameters.healthWait }}s for container to be healthy..."
+      sleep ${{ parameters.healthWait }}
+      if docker ps --filter "name=${{ parameters.containerName }}" --filter "status=running" | grep -q ${{ parameters.containerName }}; then
+        echo "Container is running"
+      else
+        echo "Container failed to start"
+        docker logs ${{ parameters.containerName }} --tail 50
+        exit 1
+      fi
+    displayName: "Deploy ${{ parameters.containerName }}"

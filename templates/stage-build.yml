@@ -1,0 +1,27 @@
+parameters:
+  - name: appName
+    type: string
+  - name: imageName
+    type: string
+  - name: envLabel
+    type: string
+    default: ""
+
+stages:
+  - stage: Build
+    displayName: "Build Docker Image"
+    jobs:
+      - job: BuildJob
+        displayName: "Build"
+        steps:
+          - checkout: self
+            displayName: "Checkout source code"
+
+          - template: notify-start.yml
+            parameters:
+              appName: ${{ parameters.appName }}
+              envLabel: ${{ parameters.envLabel }}
+
+          - template: build-docker.yml
+            parameters:
+              imageName: ${{ parameters.imageName }}

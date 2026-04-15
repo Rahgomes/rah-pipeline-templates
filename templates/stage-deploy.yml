@@ -1,0 +1,76 @@
+parameters:
+  - name: appName
+    type: string
+  - name: containerName
+    type: string
+  - name: imageName
+    type: string
+  - name: domain
+    type: string
+  - name: port
+    type: string
+    default: "3000"
+  - name: hostPort
+    type: string
+    default: ""
+  - name: coolifyAppId
+    type: string
+  - name: coolifyUuid
+    type: string
+  - name: coolifyResourceName
+    type: string
+  - name: coolifyProjectName
+    type: string
+  - name: coolifyEnvironment
+    type: string
+    default: "production"
+  - name: envFlags
+    type: string
+    default: ""
+  - name: volumes
+    type: string
+    default: ""
+  - name: healthWait
+    type: number
+    default: 10
+  - name: envLabel
+    type: string
+    default: ""
+  - name: dependsOn
+    type: string
+    default: "Build"
+  - name: condition
+    type: string
+    default: "succeeded()"
+
+stages:
+  - stage: Deploy
+    displayName: "Deploy ${{ parameters.coolifyEnvironment }}"
+    dependsOn: ${{ parameters.dependsOn }}
+    condition: ${{ parameters.condition }}
+    jobs:
+      - job: DeployJob
+        displayName: "Deploy ${{ parameters.domain }}"
+        steps:
+          - template: deploy-container.yml
+            parameters:
+              containerName: ${{ parameters.containerName }}
+              imageName: ${{ parameters.imageName }}
+              domain: ${{ parameters.domain }}
+              port: ${{ parameters.port }}
+              hostPort: ${{ parameters.hostPort }}
+              coolifyAppId: ${{ parameters.coolifyAppId }}
+              coolifyUuid: ${{ parameters.coolifyUuid }}
+              coolifyResourceName: ${{ parameters.coolifyResourceName }}
+              coolifyProjectName: ${{ parameters.coolifyProjectName }}
+              coolifyEnvironment: ${{ parameters.coolifyEnvironment }}
+              envFlags: ${{ parameters.envFlags }}
+              volumes: ${{ parameters.volumes }}
+              healthWait: ${{ parameters.healthWait }}
+
+          - template: notify-result.yml
+            parameters:
+              appName: ${{ parameters.appName }}
+              containerName: ${{ parameters.containerName }}
+              domain: ${{ parameters.domain }}
+              envLabel: ${{ parameters.envLabel }}

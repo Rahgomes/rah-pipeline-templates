@@ -1,0 +1,41 @@
+parameters:
+  - name: appName
+    type: string
+  - name: containerName
+    type: string
+  - name: domain
+    type: string
+  - name: envLabel
+    type: string
+    default: ""
+
+steps:
+  - script: |
+      set -euo pipefail
+      COMMIT_SHORT=$(git rev-parse --short HEAD)
+
+      STATUS="✅"
+      TITLE="DEPLOY CONCLUÍDO"
+      if ! docker ps --filter "name=${{ parameters.containerName }}" --filter "status=running" | grep -q ${{ parameters.containerName }}; then
+        STATUS="❌"
+        TITLE="DEPLOY FALHOU"
+      fi
+
+      ENV_SUFFIX="${{ parameters.envLabel }}"
+      if [ -n "$ENV_SUFFIX" ]; then
+        ENV_SUFFIX=" [$ENV_SUFFIX]"
+      fi
+
+      curl -s -X POST \
+        "https://api.telegram.org/bot$(TELEGRAM_BOT_TOKEN)/sendMessage" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"chat_id\": \"$(TELEGRAM_CHAT_ID)\",
+          \"text\": \"$STATUS <b>$TITLE — ${{ parameters.appName }}${ENV_SUFFIX}</b>\nCommit: <code>$COMMIT_SHORT</code>\nURL: https://${{ parameters.domain }}\",
+          \"parse_mode\": \"HTML\"
+        }" > /dev/null
+    displayName: "Notify deploy result"
+    condition: always()
+    env:
+      TELEGRAM_BOT_TOKEN: $(TELEGRAM_BOT_TOKEN)
+      TELEGRAM_CHAT_ID: $(TELEGRAM_CHAT_ID)
