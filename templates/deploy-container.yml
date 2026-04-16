@@ -60,10 +60,12 @@ steps:
         PORT_FLAG="-p ${{ parameters.hostPort }}:${{ parameters.port }}"
       fi
 
-      # Build volume flag
+      # Build volume flags (supports multiple space-separated volumes)
       VOLUME_FLAG=""
       if [ -n "${{ parameters.volumes }}" ]; then
-        VOLUME_FLAG="-v ${{ parameters.volumes }}"
+        for vol in ${{ parameters.volumes }}; do
+          VOLUME_FLAG="$VOLUME_FLAG -v $vol"
+        done
       fi
 
       echo "Starting new container..."
