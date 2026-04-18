@@ -54,6 +54,7 @@ stages:
     jobs:
       - job: DeployJob
         displayName: "Deploy ${{ parameters.domain }}"
+        timeoutInMinutes: 10
         steps:
           - template: deploy-container.yml
             parameters:

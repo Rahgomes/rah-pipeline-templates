@@ -16,6 +16,7 @@ stages:
     jobs:
       - job: BuildJob
         displayName: "Build"
+        timeoutInMinutes: 20
         steps:
           - checkout: self
             displayName: "Checkout source code"
