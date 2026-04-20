@@ -1,4 +1,7 @@
 parameters:
+  - name: stageId
+    type: string
+    default: "Deploy"
   - name: appName
     type: string
   - name: containerName
@@ -47,7 +50,7 @@ parameters:
     default: "succeeded()"
 
 stages:
-  - stage: Deploy
+  - stage: ${{ parameters.stageId }}
     displayName: "Deploy ${{ parameters.coolifyEnvironment }}"
     dependsOn: ${{ parameters.dependsOn }}
     condition: ${{ parameters.condition }}
