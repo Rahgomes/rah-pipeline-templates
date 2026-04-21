@@ -4,6 +4,12 @@ parameters:
   - name: registryUrl
     type: string
     default: "registry.ramongomessilva.com.br"
+  # Args repassados como `--build-arg K=V ...`. Já vem pré-expandido pelo
+  # caller (ex: `--build-arg FOO=$(FOO_VAR)`), então usamos direto na linha
+  # do docker build sem escape/quote extra.
+  - name: buildArgs
+    type: string
+    default: ""
 
 steps:
   - script: |
@@ -13,7 +19,7 @@ steps:
       TAG="$(Build.BuildId)"
 
       echo "Building Docker image: $IMAGE..."
-      docker build -t $IMAGE:$TAG -t $IMAGE:latest .
+      docker build ${{ parameters.buildArgs }} -t $IMAGE:$TAG -t $IMAGE:latest .
 
       echo "Tagging for registry: $REGISTRY/$IMAGE..."
       docker tag $IMAGE:$TAG $REGISTRY/$IMAGE:$TAG

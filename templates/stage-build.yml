@@ -9,6 +9,13 @@ parameters:
   - name: envLabel
     type: string
     default: ""
+  # Args a serem passados pro `docker build` como `--build-arg K=V ...`.
+  # Usado quando a imagem precisa de NEXT_PUBLIC_* bakeado no bundle, ou
+  # de tokens pra upload de source maps (Sentry etc). String única,
+  # pre-expandida pelo caller — ex.: `--build-arg FOO=$(FOO_VAR)`.
+  - name: buildArgs
+    type: string
+    default: ""
 
 stages:
   - stage: Build
@@ -30,3 +37,4 @@ stages:
             parameters:
               imageName: ${{ parameters.imageName }}
               registryUrl: ${{ parameters.registryUrl }}
+              buildArgs: ${{ parameters.buildArgs }}
