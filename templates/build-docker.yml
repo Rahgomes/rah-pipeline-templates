@@ -24,5 +24,8 @@ steps:
       docker push $REGISTRY/$IMAGE:latest
 
       echo "Build and push completed successfully"
-      docker images $IMAGE --format "table {{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -5
+      # Lista as últimas tags pra debug. `| head -5` combinado com `set -o
+      # pipefail` matava o step com SIGPIPE (exit 141) mesmo com o build OK —
+      # o `|| true` isola o exit code dessa linha do resto do job.
+      docker images $IMAGE --format "table {{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -5 || true
     displayName: "Build and push Docker image"
