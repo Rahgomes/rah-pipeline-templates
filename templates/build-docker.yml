@@ -7,19 +7,38 @@ parameters:
   # Args repassados como `--build-arg K=V ...`. Já vem pré-expandido pelo
   # caller (ex: `--build-arg FOO=$(FOO_VAR)`), então usamos direto na linha
   # do docker build sem escape/quote extra.
+  #
+  # Use pra: valores NÃO-secret de build-time (NEXT_PUBLIC_*, metadata
+  # como SENTRY_ORG/PROJECT). Valores aqui ficam gravados em layers
+  # do Dockerfile via ARG/ENV — ok pra valores públicos, NÃO use pra
+  # tokens/senhas (vazam no histórico da imagem).
   - name: buildArgs
+    type: string
+    default: ""
+  # Secrets repassados como `--mount=type=secret` via BuildKit. Já vem
+  # pré-expandido pelo caller (ex: `--secret id=foo,env=FOO_TOKEN`).
+  #
+  # Use pra: secrets que precisam DURANTE o `npm run build`/`npm install`
+  # (SENTRY_AUTH_TOKEN pra source maps, NPM_TOKEN pra registry privado,
+  # etc). O Dockerfile precisa consumir via `RUN --mount=type=secret,
+  # id=<id>,env=<VAR> ...` — assim o valor fica disponível só naquele
+  # RUN, nunca entra em layer. Para runtime, use envFlags do stage-deploy.
+  - name: buildSecrets
     type: string
     default: ""
 
 steps:
   - script: |
       set -euo pipefail
+      # BuildKit é pré-requisito de `--mount=type=secret`. Default em
+      # Docker 23+, mas a flag garante em agents mais antigos.
+      export DOCKER_BUILDKIT=1
       REGISTRY="${{ parameters.registryUrl }}"
       IMAGE="${{ parameters.imageName }}"
       TAG="$(Build.BuildId)"
 
       echo "Building Docker image: $IMAGE..."
-      docker build ${{ parameters.buildArgs }} -t $IMAGE:$TAG -t $IMAGE:latest .
+      docker build ${{ parameters.buildArgs }} ${{ parameters.buildSecrets }} -t $IMAGE:$TAG -t $IMAGE:latest .
 
       echo "Tagging for registry: $REGISTRY/$IMAGE..."
       docker tag $IMAGE:$TAG $REGISTRY/$IMAGE:$TAG

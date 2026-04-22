@@ -10,10 +10,19 @@ parameters:
     type: string
     default: ""
   # Args a serem passados pro `docker build` como `--build-arg K=V ...`.
-  # Usado quando a imagem precisa de NEXT_PUBLIC_* bakeado no bundle, ou
-  # de tokens pra upload de source maps (Sentry etc). String única,
-  # pre-expandida pelo caller — ex.: `--build-arg FOO=$(FOO_VAR)`.
+  # Usado pra valores NÃO-secret de build-time (NEXT_PUBLIC_*, metadata
+  # tipo SENTRY_ORG/PROJECT). Valor fica em layer via ARG/ENV — não use
+  # pra tokens. String única pre-expandida pelo caller — ex.:
+  # `--build-arg FOO=$(FOO_VAR)`.
   - name: buildArgs
+    type: string
+    default: ""
+  # Secrets pro `docker build` via `--mount=type=secret` do BuildKit.
+  # Usado pra tokens que precisam DURANTE o build (SENTRY_AUTH_TOKEN pra
+  # source maps, NPM_TOKEN pra registry privado). Nunca viram layer.
+  # O Dockerfile precisa consumir via `RUN --mount=type=secret,id=...`.
+  # String pre-expandida — ex.: `--secret id=foo,env=FOO_TOKEN`.
+  - name: buildSecrets
     type: string
     default: ""
 
@@ -38,3 +47,4 @@ stages:
               imageName: ${{ parameters.imageName }}
               registryUrl: ${{ parameters.registryUrl }}
               buildArgs: ${{ parameters.buildArgs }}
+              buildSecrets: ${{ parameters.buildSecrets }}
