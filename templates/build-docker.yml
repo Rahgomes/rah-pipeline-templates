@@ -26,6 +26,14 @@ parameters:
   - name: buildSecrets
     type: string
     default: ""
+  # Env vars expostas ao script de build. Obrigatório quando buildSecrets
+  # usa `env=VAR` — Azure DevOps NÃO expõe variables secret como env vars
+  # automaticamente, precisa mapear explicitamente. Ex:
+  #   buildSecretEnvs:
+  #     SENTRY_AUTH_TOKEN: $(SENTRY_AUTH_TOKEN)
+  - name: buildSecretEnvs
+    type: object
+    default: {}
 
 steps:
   - script: |
@@ -54,3 +62,4 @@ steps:
       # o `|| true` isola o exit code dessa linha do resto do job.
       docker images $IMAGE --format "table {{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -5 || true
     displayName: "Build and push Docker image"
+    env: ${{ parameters.buildSecretEnvs }}

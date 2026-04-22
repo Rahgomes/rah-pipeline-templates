@@ -25,6 +25,14 @@ parameters:
   - name: buildSecrets
     type: string
     default: ""
+  # Env vars expostas ao script de build. Obrigatório quando buildSecrets
+  # usa `env=VAR` — Azure DevOps não expõe variables secret como env vars
+  # automaticamente, precisa mapear aqui. Ex:
+  #   buildSecretEnvs:
+  #     SENTRY_AUTH_TOKEN: $(SENTRY_AUTH_TOKEN)
+  - name: buildSecretEnvs
+    type: object
+    default: {}
 
 stages:
   - stage: Build
@@ -48,3 +56,4 @@ stages:
               registryUrl: ${{ parameters.registryUrl }}
               buildArgs: ${{ parameters.buildArgs }}
               buildSecrets: ${{ parameters.buildSecrets }}
+              buildSecretEnvs: ${{ parameters.buildSecretEnvs }}
