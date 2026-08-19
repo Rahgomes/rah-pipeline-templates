@@ -33,6 +33,13 @@ parameters:
   - name: buildSecretEnvs
     type: object
     default: {}
+  # Repassados para build-docker.yml. Defaults preservam o comportamento atual.
+  - name: context
+    type: string
+    default: "."
+  - name: dockerfile
+    type: string
+    default: ""
 
 stages:
   - stage: Build
@@ -57,3 +64,5 @@ stages:
               buildArgs: ${{ parameters.buildArgs }}
               buildSecrets: ${{ parameters.buildSecrets }}
               buildSecretEnvs: ${{ parameters.buildSecretEnvs }}
+              context: ${{ parameters.context }}
+              dockerfile: ${{ parameters.dockerfile }}
