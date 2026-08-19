@@ -31,6 +31,13 @@ parameters:
   - name: volumes
     type: string
     default: ""
+  # Labels adicionais do docker, ja pre-expandidas pelo caller no formato
+  # `-l "chave=valor" -l "chave2=valor2"`. Default vazio mantem o
+  # comportamento historico. Uso tipico: router de redirect http->https,
+  # dominio alternativo (www), middleware especifico do Traefik.
+  - name: extraLabels
+    type: string
+    default: ""
   - name: healthWait
     type: number
     default: 10
@@ -92,6 +99,7 @@ steps:
         -l "coolify.serviceName=${{ parameters.containerName }}" \
         -l "coolify.pullRequestId=0" \
         -l "coolify.version=4.0.0-beta.462" \
+        ${{ parameters.extraLabels }} \
         ${{ parameters.registryUrl }}/${{ parameters.imageName }}:$(Build.BuildId)
 
       echo "Waiting ${{ parameters.healthWait }}s for container to be healthy..."
