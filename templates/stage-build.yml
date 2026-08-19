@@ -1,4 +1,10 @@
 parameters:
+  # Id do stage. Default "Build" preserva o comportamento historico. Em
+  # monorepo, cada deployavel precisa de um id proprio, senao dois stages
+  # com o mesmo nome invalidam o pipeline. Ex.: `stageId: BuildApi`.
+  - name: stageId
+    type: string
+    default: "Build"
   - name: appName
     type: string
   - name: imageName
@@ -42,7 +48,7 @@ parameters:
     default: ""
 
 stages:
-  - stage: Build
+  - stage: ${{ parameters.stageId }}
     displayName: "Build Docker Image"
     jobs:
       - job: BuildJob
