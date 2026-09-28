@@ -46,10 +46,22 @@ parameters:
   - name: dockerfile
     type: string
     default: ""
+  # Opcionais para pipelines que pulam o build quando o app nao mudou (monorepo).
+  # Vazios = comportamento historico (depende do stage anterior, condition padrao).
+  - name: dependsOn
+    type: object
+    default: []
+  - name: condition
+    type: string
+    default: ""
 
 stages:
   - stage: ${{ parameters.stageId }}
     displayName: "Build Docker Image"
+    ${{ if ne(length(parameters.dependsOn), 0) }}:
+      dependsOn: ${{ parameters.dependsOn }}
+    ${{ if ne(parameters.condition, '') }}:
+      condition: ${{ parameters.condition }}
     jobs:
       - job: BuildJob
         displayName: "Build"
