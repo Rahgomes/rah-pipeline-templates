@@ -46,8 +46,9 @@ parameters:
   - name: envLabel
     type: string
     default: ""
+  # texto (um stage) ou lista de stages
   - name: dependsOn
-    type: string
+    type: object
     default: "Build"
   - name: condition
     type: string
