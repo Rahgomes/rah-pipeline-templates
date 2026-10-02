@@ -102,13 +102,28 @@ steps:
         ${{ parameters.extraLabels }} \
         ${{ parameters.registryUrl }}/${{ parameters.imageName }}:$(Build.BuildId)
 
-      echo "Waiting ${{ parameters.healthWait }}s for container to be healthy..."
-      sleep ${{ parameters.healthWait }}
-      if docker ps --filter "name=${{ parameters.containerName }}" --filter "status=running" | grep -q ${{ parameters.containerName }}; then
-        echo "Container is running"
-      else
-        echo "Container failed to start"
-        docker logs ${{ parameters.containerName }} --tail 50
-        exit 1
-      fi
+      # Nome exato via inspect: `docker ps --filter name=` casa por substring (pega
+      # "app-1" de um compose local) e `| grep -q` com pipefail falhava por SIGPIPE.
+      # Com HEALTHCHECK na imagem, espera ficar healthy (até 4x healthWait, sai assim que
+      # fica); sem HEALTHCHECK, espera healthWait e confere que continua rodando.
+      NAME="${{ parameters.containerName }}"
+      WAIT=${{ parameters.healthWait }}
+      state() { docker inspect -f '{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}|{{.RestartCount}}' "$NAME" 2>/dev/null || echo "missing|none|0"; }
+      echo "Waiting for $NAME (healthWait ${WAIT}s)..."
+      sleep "$WAIT"
+      DEADLINE=$((SECONDS + 3 * WAIT))
+      S=$(state)
+      while [ "${S%%|*}" = "running" ] && [ "$(echo "$S" | cut -d'|' -f2)" = "starting" ] && [ $SECONDS -lt $DEADLINE ]; do
+        sleep 3
+        S=$(state)
+      done
+      echo "state: $S"
+      case "$S" in
+        "running|healthy|"*|"running|none|"*) echo "Container is running" ;;
+        *)
+          echo "Container failed to start"
+          docker logs "$NAME" --tail 50
+          exit 1
+          ;;
+      esac
     displayName: "Deploy ${{ parameters.containerName }}"
