@@ -43,6 +43,11 @@ parameters:
   - name: healthWait
     type: number
     default: 10
+  # Servidor onde o container roda. Vazio = o próprio srv986128 (comportamento de sempre).
+  # "ssh://contabo-docker" = Contabo pela VPN (chave que só roda docker dial-stdio).
+  - name: dockerHost
+    type: string
+    default: ""
   - name: envLabel
     type: string
     default: ""
@@ -81,6 +86,7 @@ stages:
               volumes: ${{ parameters.volumes }}
               extraLabels: ${{ parameters.extraLabels }}
               healthWait: ${{ parameters.healthWait }}
+              dockerHost: ${{ parameters.dockerHost }}
 
           - template: notify-result.yml
             parameters:
@@ -88,3 +94,4 @@ stages:
               containerName: ${{ parameters.containerName }}
               domain: ${{ parameters.domain }}
               envLabel: ${{ parameters.envLabel }}
+              dockerHost: ${{ parameters.dockerHost }}

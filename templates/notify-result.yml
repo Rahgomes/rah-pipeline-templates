@@ -8,11 +8,16 @@ parameters:
   - name: envLabel
     type: string
     default: ""
+  # Mesmo destino do deploy-container.yml (vazio = Docker local).
+  - name: dockerHost
+    type: string
+    default: ""
 
 steps:
   - script: |
       set -euo pipefail
       COMMIT_SHORT=$(git rev-parse --short HEAD)
+      if [ -n "${{ parameters.dockerHost }}" ]; then export DOCKER_HOST="${{ parameters.dockerHost }}"; fi
 
       STATUS="✅"
       TITLE="DEPLOY CONCLUÍDO"

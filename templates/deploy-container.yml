@@ -41,10 +41,18 @@ parameters:
   - name: healthWait
     type: number
     default: 10
+  # Vazio = Docker local (srv986128). "ssh://contabo-docker" = Contabo pela VPN.
+  - name: dockerHost
+    type: string
+    default: ""
 
 steps:
   - script: |
       set -euo pipefail
+      if [ -n "${{ parameters.dockerHost }}" ]; then
+        export DOCKER_HOST="${{ parameters.dockerHost }}"
+        echo "Destino: $DOCKER_HOST"
+      fi
       echo "Stopping current container..."
       docker stop ${{ parameters.containerName }} 2>/dev/null || true
       docker rm ${{ parameters.containerName }} 2>/dev/null || true
